@@ -1,5 +1,12 @@
 <?php
-require_once dirname(__DIR__) . "/config/conectdb.php";
+require_once dirname(__DIR__, 2) . "/config/conectdb.php";
+$layoutSidebarFile = dirname(__DIR__) . "/layout/fixed-sidebar.html";
+$sidebarHtml = "";
+if (is_file($layoutSidebarFile)) {
+    $layoutContent = file_get_contents($layoutSidebarFile);
+    if ($layoutContent !== false && preg_match('/<aside class="app-sidebar[\\s\\S]*?<\\/aside>/i', $layoutContent, $matches)) {
+        $sidebarHtml = $matches[0];    }
+}
 
 $resultado = $conn->query("SELECT * FROM clientes ORDER BY nombre ASC");
 $clientes = [];
@@ -15,8 +22,8 @@ $conn->close();
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Clientes | Dashboard Principal</title>
-  <link rel="stylesheet" href="../dist/css/adminlte.min.css">
-  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../css/adminlte.min.css">
+  <link rel="stylesheet" href="/clientes/assets/css/style.css">
 </head>
 <body class="layout-fixed sidebar-expand-lg bg-body-tertiary clientes-page">
 <div class="app-wrapper">
@@ -28,36 +35,10 @@ $conn->close();
         </li>
       </ul>
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item">
-          <a class="nav-link" href="dashboard2.php">Ir a Dashboard 2</a>
-        </li>
       </ul>
     </div>
   </nav>
-
-  <aside class="app-sidebar bg-body-secondary shadow" data-bs-theme="dark">
-    <div class="sidebar-brand">
-      <a href="index.php" class="brand-link">
-        <span class="brand-text fw-light">Clientes App</span>
-      </a>
-    </div>
-    <div class="sidebar-wrapper">
-      <nav class="mt-2">
-        <ul class="nav sidebar-menu flex-column">
-          <li class="nav-item">
-            <a href="index.php" class="nav-link active">
-              <p>Dashboard Principal</p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="dashboard2.php" class="nav-link">
-              <p>Dashboard Secundario</p>
-            </a>
-          </li>
-        </ul>
-      </nav>
-    </div>
-  </aside>
+  <?= $sidebarHtml ?>
 
   <main class="app-main">
     <div class="app-content">
@@ -157,7 +138,13 @@ $conn->close();
   </div>
 </div>
 
-<script src="../dist/js/adminlte.min.js"></script>
-<script src="../assets/js/script.js"></script>
+<script src="../js/adminlte.min.js"></script>
+<script src="/clientes/assets/js/script.js"></script>
 </body>
 </html>
+
+
+
+
+
+

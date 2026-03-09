@@ -3,7 +3,7 @@
   <!--begin::Head-->
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>AdminLTE 4 | Fixed Sidebar</title>
+    <title>Restaurante | Fixed Sidebar</title>
     <!--begin::Accessibility Meta Tags-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
     <meta name="color-scheme" content="light dark" />
@@ -11,7 +11,7 @@
     <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
     <!--end::Accessibility Meta Tags-->
     <!--begin::Primary Meta Tags-->
-    <meta name="title" content="AdminLTE 4 | Fixed Sidebar" />
+    <meta name="title" content="Restaurante | Fixed Sidebar" />
     <meta name="author" content="ColorlibHQ" />
     <meta
       name="description"
@@ -264,7 +264,7 @@
         <!--begin::Sidebar Brand-->
         <div class="sidebar-brand">
           <!--begin::Brand Link-->
-          <a href="../index.html" class="brand-link">
+          <a href="/clientes/dist/html/index.php" class="brand-link">
             <!--begin::Brand Image-->
             <img
               src="../assets/img/AdminLTELogo.png"
@@ -273,7 +273,7 @@
             />
             <!--end::Brand Image-->
             <!--begin::Brand Text-->
-            <span class="brand-text fw-light">AdminLTE 4</span>
+            <span class="brand-text fw-light">Restaurante</span>
             <!--end::Brand Text-->
           </a>
           <!--end::Brand Link-->
@@ -290,7 +290,20 @@
               aria-label="Main navigation"
               data-accordion="false"
               id="navigation"
-            >
+            >              <li class="nav-item">
+                <a href="/clientes/dist/html/index.php" class="nav-link">
+                  <i class="nav-icon bi bi-people-fill"></i>
+                  <p>Gestion de clientes</p>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a href="/clientes/dist/html/dashboard2.php" class="nav-link">
+                  <i class="nav-icon bi bi-box-seam-fill"></i>
+                  <p>Gestion de productos</p>
+                </a>
+              </li>
+
+              <!--
               <li class="nav-item">
                 <a href="#" class="nav-link">
                   <i class="nav-icon bi bi-speedometer"></i>
@@ -721,8 +734,8 @@
                   <p>Informational</p>
                 </a>
               </li>
-            </ul>
-            <!--end::Sidebar Menu-->
+              -->
+
           </nav>
         </div>
         <!--end::Sidebar Wrapper-->
@@ -855,3 +868,7 @@
   </body>
   <!--end::Body-->
 </html>
+
+
+
+

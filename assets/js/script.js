@@ -1,6 +1,6 @@
   let modoEdicion = false;
   let identificacionOriginal = "";
-  const API_URL = "../api/api.php";
+  const API_URL = "/clientes/api/api.php";
 
   // ═══════════════════════════════════════════════════════════
   // MOSTRAR NOTIFICACIÓN
@@ -226,4 +226,5 @@
       });
     });
   });
+
 
