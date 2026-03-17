@@ -3,8 +3,8 @@
  * API de Productos (CRUD)
  *
  * Responde en JSON y espera peticiones POST con un campo `action`:
- * - action=insert  -> POST: nombre, descripcion, valor
- * - action=update  -> POST: old_nombre, nombre, descripcion, valor
+ * - action=insert  -> POST: nombre, descripcion, valor, cliente
+ * - action=update  -> POST: old_nombre, nombre, descripcion, valor, cliente
  * - action=delete  -> POST: old_nombre
  *
  * Nota: Este archivo intenta adaptarse a posibles variaciones de nombres de columnas
@@ -96,9 +96,13 @@ while ($row = $columnsResult->fetch_assoc()) {
 $colNombre = find_column_name($columns, ['nombre']);
 $colDescripcion = find_column_name($columns, ['descripcion', 'descripción']);
 $colValor = find_column_name($columns, ['valor', 'precio']);
+$colCliente = find_column_name($columns, ['cliente', 'cliente_id', 'id_cliente', 'idcliente', 'identificacion_cliente', 'cliente_identificacion']);
 
-if ($colNombre === null || $colDescripcion === null || $colValor === null) {
-    echo json_encode(['success' => false, 'error' => 'No se encontraron columnas esperadas en la tabla productos']);
+if ($colNombre === null || $colDescripcion === null || $colValor === null || $colCliente === null) {
+    echo json_encode([
+        'success' => false,
+        'error' => 'Falta la columna de cliente en la tabla productos. Agrega una columna llamada `cliente` (VARCHAR) y vuelve a intentar.',
+    ]);
     exit;
 }
 
@@ -106,11 +110,12 @@ if ($colNombre === null || $colDescripcion === null || $colValor === null) {
 // ELIMINAR
 // ============================================================================
 if ($action === 'delete') {
-    $oldNombre = trim((string) ($_POST['old_nombre'] ?? ''));
-    if ($oldNombre === '') {
+    if (!array_key_exists('old_nombre', $_POST)) {
         echo json_encode(['success' => false, 'error' => 'Clave de producto no proporcionada']);
         exit;
     }
+
+    $oldNombre = (string) $_POST['old_nombre'];
 
     $oldNombreSql = $conn->real_escape_string($oldNombre);
     $sql = 'DELETE FROM productos WHERE ' . quote_identifier($colNombre) . " = '{$oldNombreSql}' LIMIT 1";
@@ -129,6 +134,7 @@ if ($action === 'insert') {
     $nombre = trim((string) ($_POST['nombre'] ?? ''));
     $descripcion = trim((string) ($_POST['descripcion'] ?? ''));
     $valor = trim((string) ($_POST['valor'] ?? ''));
+    $cliente = trim((string) ($_POST['cliente'] ?? ''));
 
     if ($nombre === '' || $descripcion === '' || $valor === '') {
         echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
@@ -138,11 +144,23 @@ if ($action === 'insert') {
     $nombreSql = $conn->real_escape_string($nombre);
     $descripcionSql = $conn->real_escape_string($descripcion);
     $valorSql = (float) $valor;
+    $clienteSql = $conn->real_escape_string($cliente);
+
+    $clienteValueSql = 'NULL';
+    if ($cliente !== '') {
+        $exists = $conn->query("SELECT identificacion FROM clientes WHERE identificacion = '{$clienteSql}' LIMIT 1");
+        if (!$exists || $exists->num_rows === 0) {
+            echo json_encode(['success' => false, 'error' => 'El cliente seleccionado no existe']);
+            exit;
+        }
+        $clienteValueSql = "'{$clienteSql}'";
+    }
 
     $sql = 'INSERT INTO productos ('
         . quote_identifier($colNombre) . ', '
         . quote_identifier($colDescripcion) . ', '
-        . quote_identifier($colValor) . ") VALUES ('{$nombreSql}', '{$descripcionSql}', '{$valorSql}')";
+        . quote_identifier($colValor) . ', '
+        . quote_identifier($colCliente) . ") VALUES ('{$nombreSql}', '{$descripcionSql}', '{$valorSql}', {$clienteValueSql})";
 
     if ($conn->query($sql)) {
         echo json_encode(['success' => true, 'message' => 'Producto agregado correctamente']);
@@ -160,6 +178,7 @@ if ($action === 'update') {
     $nombre = trim((string) ($_POST['nombre'] ?? ''));
     $descripcion = trim((string) ($_POST['descripcion'] ?? ''));
     $valor = trim((string) ($_POST['valor'] ?? ''));
+    $cliente = trim((string) ($_POST['cliente'] ?? ''));
 
     if ($oldNombre === '' || $nombre === '' || $descripcion === '' || $valor === '') {
         echo json_encode(['success' => false, 'error' => 'Datos incompletos']);
@@ -170,11 +189,23 @@ if ($action === 'update') {
     $nombreSql = $conn->real_escape_string($nombre);
     $descripcionSql = $conn->real_escape_string($descripcion);
     $valorSql = (float) $valor;
+    $clienteSql = $conn->real_escape_string($cliente);
+
+    $clienteSetSql = quote_identifier($colCliente) . '=NULL';
+    if ($cliente !== '') {
+        $exists = $conn->query("SELECT identificacion FROM clientes WHERE identificacion = '{$clienteSql}' LIMIT 1");
+        if (!$exists || $exists->num_rows === 0) {
+            echo json_encode(['success' => false, 'error' => 'El cliente seleccionado no existe']);
+            exit;
+        }
+        $clienteSetSql = quote_identifier($colCliente) . "='{$clienteSql}'";
+    }
 
     $sql = 'UPDATE productos SET '
         . quote_identifier($colNombre) . "='{$nombreSql}', "
         . quote_identifier($colDescripcion) . "='{$descripcionSql}', "
-        . quote_identifier($colValor) . "='{$valorSql}' "
+        . quote_identifier($colValor) . "='{$valorSql}', "
+        . $clienteSetSql . ' '
         . 'WHERE ' . quote_identifier($colNombre) . "='{$oldNombreSql}' LIMIT 1";
 
     if ($conn->query($sql)) {

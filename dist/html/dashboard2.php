@@ -14,6 +14,28 @@ function normalize_key(string $value): string
     return preg_replace('/[^a-z0-9_]/', '', $value) ?? '';
 }
 
+function find_column_name(array $columns, array $targets): ?string
+{
+    $normalizedColumns = [];
+    foreach ($columns as $column) {
+        $normalizedColumns[normalize_key((string) $column)] = (string) $column;
+    }
+
+    foreach ($targets as $target) {
+        $key = normalize_key((string) $target);
+        if (array_key_exists($key, $normalizedColumns)) {
+            return $normalizedColumns[$key];
+        }
+    }
+
+    return null;
+}
+
+function quote_identifier(string $column): string
+{
+    return '`' . str_replace('`', '``', $column) . '`';
+}
+
 function get_field_value(array $row, array $targets): string
 {
     $normalizedMap = [];
@@ -41,18 +63,52 @@ if (is_file($layoutSidebarFile)) {
 }
 
 $productos = [];
-$resultado = $conn->query('SELECT * FROM productos ORDER BY 1 ASC');
+
+$clientes = [];
+$clientesResult = $conn->query('SELECT identificacion, nombre FROM clientes ORDER BY nombre ASC');
+if ($clientesResult) {
+    while ($fila = $clientesResult->fetch_assoc()) {
+        $clientes[] = [
+            'identificacion' => (string) ($fila['identificacion'] ?? ''),
+            'nombre' => (string) ($fila['nombre'] ?? ''),
+        ];
+    }
+}
+
+$colCliente = null;
+$columnsResult = $conn->query('SHOW COLUMNS FROM productos');
+if ($columnsResult) {
+    $columns = [];
+    while ($row = $columnsResult->fetch_assoc()) {
+        $columns[] = (string) $row['Field'];
+    }
+    $colCliente = find_column_name($columns, ['cliente', 'cliente_id', 'id_cliente', 'idcliente', 'identificacion_cliente', 'cliente_identificacion']);
+}
+
+$sqlProductos = 'SELECT p.*, c.nombre AS cliente_nombre, c.identificacion AS cliente_identificacion FROM productos p ';
+if ($colCliente !== null) {
+    $sqlProductos .= 'LEFT JOIN clientes c ON p.' . quote_identifier($colCliente) . ' = c.identificacion ';
+} else {
+    $sqlProductos .= 'LEFT JOIN clientes c ON 1=0 ';
+}
+$sqlProductos .= 'ORDER BY 1 ASC';
+
+$resultado = $conn->query($sqlProductos);
 if ($resultado) {
     while ($fila = $resultado->fetch_assoc()) {
         $nombre = get_field_value($fila, ['nombre']);
-        $descripcion = get_field_value($fila, ['descripcion', 'descripci�n']);
+        $descripcion = get_field_value($fila, ['descripcion', 'descripción']);
         $valorRaw = get_field_value($fila, ['valor', 'precio']);
         $valor = is_numeric($valorRaw) ? (float) $valorRaw : 0;
+        $clienteId = get_field_value($fila, ['cliente_identificacion', 'cliente', 'cliente_id', 'id_cliente', 'identificacion_cliente']);
+        $clienteNombre = get_field_value($fila, ['cliente_nombre']);
 
         $productos[] = [
             'nombre' => $nombre,
             'descripcion' => $descripcion,
             'valor' => $valor,
+            'cliente_id' => $clienteId,
+            'cliente_nombre' => $clienteNombre,
             'clave' => $nombre,
         ];
     }
@@ -97,14 +153,15 @@ $conn->close();
               <thead>
                 <tr>
                   <th>Nombre</th>
-                  <th>Descripcion</th>
+                  <th>Descripción</th>
                   <th>Valor</th>
+                  <th>Cliente</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody id="tabla">
                 <?php if (empty($productos)): ?>
-                  <tr><td colspan="4" class="empty">No hay productos registrados.</td></tr>
+                  <tr><td colspan="5" class="empty">No hay productos registrados.</td></tr>
                 <?php else: ?>
                   <?php foreach ($productos as $p): ?>
                     <?php
@@ -112,26 +169,31 @@ $conn->close();
                     $nombre = (string) $p['nombre'];
                     $descripcion = (string) $p['descripcion'];
                     $valor = (float) $p['valor'];
+                    $clienteId = (string) ($p['cliente_id'] ?? '');
+                    $clienteNombre = (string) ($p['cliente_nombre'] ?? '');
+                    $nombreMostrar = trim($nombre) !== '' ? $nombre : '(Sin nombre)';
                     ?>
                     <tr class="fila-producto"
                         data-nombre="<?= strtolower(htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8')) ?>"
                         data-descripcion="<?= strtolower(htmlspecialchars($descripcion, ENT_QUOTES, 'UTF-8')) ?>">
-                      <td><?= htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8') ?></td>
+                      <td><?= htmlspecialchars($nombreMostrar, ENT_QUOTES, 'UTF-8') ?></td>
                       <td><?= htmlspecialchars($descripcion, ENT_QUOTES, 'UTF-8') ?></td>
                       <td>$<?= number_format($valor, 2, '.', ',') ?></td>
+                      <td><?= htmlspecialchars($clienteNombre !== '' ? $clienteNombre : ($clienteId !== '' ? $clienteId : '-'), ENT_QUOTES, 'UTF-8') ?></td>
                       <td>
                         <div class="actions">
                           <button
                             class="btn-icon btn-edit"
                             type="button"
                             title="Editar"
-                            onclick='abrirEditar(<?= json_encode($clave, JSON_UNESCAPED_UNICODE) ?>, <?= json_encode($nombre, JSON_UNESCAPED_UNICODE) ?>, <?= json_encode($descripcion, JSON_UNESCAPED_UNICODE) ?>, <?= json_encode($valor) ?>)'
+                            <?= $clave === '' ? 'disabled' : '' ?>
+                            onclick='abrirEditar(<?= json_encode($clave, JSON_UNESCAPED_UNICODE) ?>, <?= json_encode($nombre, JSON_UNESCAPED_UNICODE) ?>, <?= json_encode($descripcion, JSON_UNESCAPED_UNICODE) ?>, <?= json_encode($valor) ?>, <?= json_encode($clienteId, JSON_UNESCAPED_UNICODE) ?>)'
                           >E</button>
                           <button
                             class="btn-icon btn-delete"
                             type="button"
                             title="Eliminar"
-                            onclick='abrirEliminar(<?= json_encode($clave, JSON_UNESCAPED_UNICODE) ?>, <?= json_encode($nombre, JSON_UNESCAPED_UNICODE) ?>)'
+                            onclick='abrirEliminar(<?= json_encode($clave, JSON_UNESCAPED_UNICODE) ?>, <?= json_encode($nombreMostrar, JSON_UNESCAPED_UNICODE) ?>)'
                           >X</button>
                         </div>
                       </td>
@@ -164,6 +226,25 @@ $conn->close();
     <div class="form-group">
       <label>Valor</label>
       <input type="number" id="inp_valor" placeholder="Ej: 15000" step="0.01" min="0">
+    </div>
+
+    <div class="form-group">
+      <label>Cliente</label>
+      <select id="inp_cliente" <?= empty($clientes) ? 'disabled' : '' ?>>
+        <?php if (empty($clientes)): ?>
+          <option value="" selected>No hay clientes</option>
+        <?php else: ?>
+          <option value="" selected>Selecciona un cliente...</option>
+          <?php foreach ($clientes as $c): ?>
+            <?php
+            $cid = (string) ($c['identificacion'] ?? '');
+            $cnombre = (string) ($c['nombre'] ?? '');
+            $label = trim($cnombre) !== '' ? ($cnombre . ' (' . $cid . ')') : $cid;
+            ?>
+            <option value="<?= htmlspecialchars($cid, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></option>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </select>
     </div>
 
     <div class="modal-actions">

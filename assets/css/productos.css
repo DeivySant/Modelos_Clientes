@@ -180,7 +180,8 @@ tbody td {
 }
 
 .form-group input,
-.form-group textarea {
+.form-group textarea,
+.form-group select {
   width: 100%;
   padding: 12px 16px;
   border: 1px solid #ced4da;
@@ -192,7 +193,8 @@ tbody td {
 }
 
 .form-group input:focus,
-.form-group textarea:focus {
+.form-group textarea:focus,
+.form-group select:focus {
   border-color: #17a2b8;
 }
 

@@ -1,6 +1,6 @@
 let modoEdicion = false;
 let claveProducto = '';
-let claveEliminar = '';
+let claveEliminar = null;
 let nombreEliminar = '';
 const API_URL = '/clientes/api/productos_api.php';
 
@@ -35,16 +35,20 @@ function abrirModal() {
   document.getElementById('inp_nombre').value = '';
   document.getElementById('inp_descripcion').value = '';
   document.getElementById('inp_valor').value = '';
+  const selCliente = document.getElementById('inp_cliente');
+  if (selCliente) selCliente.value = '';
   document.getElementById('overlay').classList.add('active');
 }
 
-function abrirEditar(clave, nombre, descripcion, valor) {
+function abrirEditar(clave, nombre, descripcion, valor, cliente) {
   modoEdicion = true;
   claveProducto = clave;
   document.getElementById('modalTitulo').textContent = 'Editar Producto';
   document.getElementById('inp_nombre').value = nombre;
   document.getElementById('inp_descripcion').value = descripcion;
   document.getElementById('inp_valor').value = valor;
+  const selCliente = document.getElementById('inp_cliente');
+  if (selCliente) selCliente.value = cliente || '';
   document.getElementById('overlay').classList.add('active');
 }
 
@@ -56,6 +60,8 @@ function guardar() {
   const nombre = document.getElementById('inp_nombre').value.trim();
   const descripcion = document.getElementById('inp_descripcion').value.trim();
   const valor = document.getElementById('inp_valor').value.trim();
+  const selCliente = document.getElementById('inp_cliente');
+  const cliente = selCliente ? (selCliente.value || '').trim() : '';
 
   if (!nombre || !descripcion || !valor) {
     mostrarNotificacion('error', 'Campos incompletos', 'Por favor completa todos los campos.');
@@ -66,6 +72,7 @@ function guardar() {
   datos.append('nombre', nombre);
   datos.append('descripcion', descripcion);
   datos.append('valor', valor);
+  datos.append('cliente', cliente);
 
   if (modoEdicion) {
     datos.append('action', 'update');
@@ -99,12 +106,12 @@ function abrirEliminar(clave, nombre) {
 
 function cerrarEliminar() {
   document.getElementById('deleteOverlay').classList.remove('active');
-  claveEliminar = '';
+  claveEliminar = null;
   nombreEliminar = '';
 }
 
 function confirmarEliminar() {
-  if (!claveEliminar) return;
+  if (claveEliminar === null) return;
 
   const datos = new FormData();
   datos.append('action', 'delete');
