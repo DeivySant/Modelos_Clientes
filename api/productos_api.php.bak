@@ -1,33 +1,12 @@
 <?php
-/**
- * API de Productos (CRUD)
- *
- * Responde en JSON y espera peticiones POST con un campo `action`:
- * - action=insert  -> POST: nombre, descripcion, valor
- * - action=update  -> POST: old_nombre, nombre, descripcion, valor
- * - action=delete  -> POST: old_nombre
- *
- * Nota: Este archivo intenta adaptarse a posibles variaciones de nombres de columnas
- * en la tabla `productos` (por ejemplo descripcion vs descripci贸n, valor vs precio).
- */
 require_once dirname(__DIR__) . '/config/conectdb.php';
-
-// Configurar respuesta JSON
 header('Content-Type: application/json');
 
-// Validar que sea una petici贸n POST
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['success' => false, 'error' => 'Metodo no permitido']);
     exit;
 }
 
-/**
- * Normaliza una cadena para poder comparar nombres de columnas.
- * - quita espacios
- * - intenta remover acentos (iconv)
- * - pasa a minusculas
- * - deja solo [a-z0-9_]
- */
 function normalize_key(string $value): string
 {
     $value = trim($value);
@@ -41,13 +20,6 @@ function normalize_key(string $value): string
     return preg_replace('/[^a-z0-9_]/', '', $value) ?? '';
 }
 
-/**
- * Busca el nombre real de una columna en la tabla, aceptando varias alternativas.
- *
- * Ejemplo:
- *   find_column_name(['Nombre', 'Descripci贸n'], ['descripcion','descripci贸n'])
- *   -> devuelve 'Descripci贸n'
- */
 function find_column_name(array $columns, array $targets): ?string
 {
     $normalizedColumns = [];
@@ -65,23 +37,17 @@ function find_column_name(array $columns, array $targets): ?string
     return null;
 }
 
-/**
- * Escapa un identificador SQL (nombre de columna) usando backticks.
- * Esto evita errores si la columna tiene caracteres especiales o coincide con una palabra reservada.
- */
 function quote_identifier(string $column): string
 {
     return '`' . str_replace('`', '``', $column) . '`';
 }
 
-// Validar que exista la acci贸n
 $action = $_POST['action'] ?? '';
 if ($action === '') {
     echo json_encode(['success' => false, 'error' => 'Accion no especificada']);
     exit;
 }
 
-// Leer estructura de la tabla para encontrar el nombre real de las columnas esperadas
 $columnsResult = $conn->query('SHOW COLUMNS FROM productos');
 if (!$columnsResult) {
     echo json_encode(['success' => false, 'error' => 'No se pudo leer la estructura de productos: ' . $conn->error]);
@@ -94,7 +60,7 @@ while ($row = $columnsResult->fetch_assoc()) {
 }
 
 $colNombre = find_column_name($columns, ['nombre']);
-$colDescripcion = find_column_name($columns, ['descripcion', 'descripci贸n']);
+$colDescripcion = find_column_name($columns, ['descripcion', 'descripci髇']);
 $colValor = find_column_name($columns, ['valor', 'precio']);
 
 if ($colNombre === null || $colDescripcion === null || $colValor === null) {
@@ -102,9 +68,8 @@ if ($colNombre === null || $colDescripcion === null || $colValor === null) {
     exit;
 }
 
-// ============================================================================
-// ELIMINAR
-// ============================================================================
+$action = $_POST['action'] ?? '';
+
 if ($action === 'delete') {
     $oldNombre = trim((string) ($_POST['old_nombre'] ?? ''));
     if ($oldNombre === '') {
@@ -122,9 +87,6 @@ if ($action === 'delete') {
     exit;
 }
 
-// ============================================================================
-// INSERTAR
-// ============================================================================
 if ($action === 'insert') {
     $nombre = trim((string) ($_POST['nombre'] ?? ''));
     $descripcion = trim((string) ($_POST['descripcion'] ?? ''));
@@ -152,9 +114,6 @@ if ($action === 'insert') {
     exit;
 }
 
-// ============================================================================
-// ACTUALIZAR
-// ============================================================================
 if ($action === 'update') {
     $oldNombre = trim((string) ($_POST['old_nombre'] ?? ''));
     $nombre = trim((string) ($_POST['nombre'] ?? ''));
@@ -185,9 +144,6 @@ if ($action === 'update') {
     exit;
 }
 
-// ============================================================================
-// ACCION NO RECONOCIDA
-// ============================================================================
 echo json_encode(['success' => false, 'error' => 'Accion no valida: ' . $action]);
 $conn->close();
 ?>

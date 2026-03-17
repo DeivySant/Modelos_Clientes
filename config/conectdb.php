@@ -1,7 +1,7 @@
 <?php
 $host     = "localhost";
-$usuario  = "sant";       // Cambia por tu usuario de MySQL
-$password = "1234";           // Cambia por tu contraseña
+$usuario  = "sant";       
+$password = "1234";         
 $base     = "restaurante";
 
 $conn = new mysqli($host, $usuario, $password, $base);
