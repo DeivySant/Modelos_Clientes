@@ -53,7 +53,7 @@ $conn->close();
             <table>
               <thead>
                 <tr>
-                  <th>Identificacion</th>
+                  <th>Identificación</th>
                   <th>Nombre</th>
                   <th>Correo</th>
                   <th>Acciones</th>

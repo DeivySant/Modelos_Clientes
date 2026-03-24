@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # ═══════════════════════════════════════════════════════
+  # MYSQL - Base de datos
+  # ═══════════════════════════════════════════════════════
+  mysql:
+    image: mysql:8.0
+    container_name: clientes_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: restaurante
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin123
+      DOCKER_ENV: "true"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - clientes_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ═══════════════════════════════════════════════════════
+  # PHP-FPM - Backend
+  # ═══════════════════════════════════════════════════════
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clientes_php
+    restart: always
+    environment:
+      DOCKER_ENV: "true"
+    volumes:
+      - ./:/var/www/html:cached
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - clientes_network
+
+  # ═══════════════════════════════════════════════════════
+  # NGINX - Servidor web
+  # ═══════════════════════════════════════════════════════
+  nginx:
+    image: nginx:alpine
+    container_name: clientes_nginx
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html:cached
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - php
+    networks:
+      - clientes_network
+
+  # ═══════════════════════════════════════════════════════
+  # PHPMYADMIN - Administrador de BD
+  # ═══════════════════════════════════════════════════════
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: clientes_phpmyadmin
+    restart: always
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_USER: root
+      PMA_PASSWORD: root
+      UPLOAD_LIMIT: 100M
+    ports:
+      - "8081:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - clientes_network
+
+# ═══════════════════════════════════════════════════════
+# VOLÚMENES Y REDES
+# ═══════════════════════════════════════════════════════
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  clientes_network:
+    driver: bridge
