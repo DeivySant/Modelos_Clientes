@@ -227,7 +227,7 @@ $conn->close();
       <label>Valor</label>
       <input type="number" id="inp_valor" placeholder="Ej: 15000" step="0.01" min="0">
     </div>
-
+<!--Select que se utiliza en seleccionar cliente en la tabla productos-->
     <div class="form-group">
       <label>Cliente</label>
       <select id="inp_cliente" <?= empty($clientes) ? 'disabled' : '' ?>>
