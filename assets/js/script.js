@@ -37,7 +37,10 @@
     modoEdicion = false;
     identificacionOriginal = "";
     document.getElementById("modalTitulo").textContent = "Agregar Cliente";
-    document.getElementById("inp_id").value = "";
+    const inpId = document.getElementById("inp_id");
+    inpId.readOnly = false;
+    inpId.disabled = false;
+    inpId.value = "";
     document.getElementById("inp_nombre").value = "";
     document.getElementById("inp_correo").value = "";
     document.getElementById("overlay").classList.add("active");
@@ -50,7 +53,10 @@
     modoEdicion = true;
     identificacionOriginal = id;
     document.getElementById("modalTitulo").textContent = "Editar Cliente";
-    document.getElementById("inp_id").value = id;
+    const inpId = document.getElementById("inp_id");
+    inpId.value = id;
+    inpId.readOnly = true;
+    inpId.disabled = false;
     document.getElementById("inp_nombre").value = nombre;
     document.getElementById("inp_correo").value = correo;
     document.getElementById("overlay").classList.add("active");
@@ -67,7 +73,7 @@
   // GUARDAR (INSERT O UPDATE) - USANDO AJAX
   // ═══════════════════════════════════════════════════════════
   function guardar() {
-    const id     = document.getElementById("inp_id").value.trim();
+    const id     = (modoEdicion ? identificacionOriginal : document.getElementById("inp_id").value.trim());
     const nombre = document.getElementById("inp_nombre").value.trim();
     const correo = document.getElementById("inp_correo").value.trim();
 

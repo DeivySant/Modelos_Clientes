@@ -84,17 +84,14 @@ if ($action === "update") {
     $nombre   = $conn->real_escape_string($_POST["nombre"]);
     $correo   = $conn->real_escape_string($_POST["correo"]);
     
-    // Si se cambió la identificación, validar que la nueva no exista
+    // No permitir cambiar la identificación (es clave del cliente)
     if ($id_vieja !== $id_nueva) {
-        $check = $conn->query("SELECT identificacion FROM clientes WHERE identificacion = '$id_nueva'");
-        if ($check->num_rows > 0) {
-            echo json_encode(["success" => false, "error" => "La identificación ya existe"]);
-            exit;
-        }
+        echo json_encode(["success" => false, "error" => "No se puede cambiar la identificación del cliente"]);
+        exit;
     }
     
     $sql = "UPDATE clientes 
-            SET identificacion='$id_nueva', nombre='$nombre', correo='$correo'
+            SET nombre='$nombre', correo='$correo'
             WHERE identificacion='$id_vieja'";
     
     if ($conn->query($sql)) {
